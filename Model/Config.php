@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Qualide\Prycing\Model;
+namespace Prycing\Prycing\Model;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 
@@ -13,7 +13,7 @@ class Config
      */
     protected $scopeConfig;
 
-    const DEFAULT_PATH = 'qualide_prycing/%s/%s';
+    const DEFAULT_PATH = 'prycing_prycing/%s/%s';
 
     public function __construct(ScopeConfigInterface $scopeConfig)
     {

@@ -1,11 +1,11 @@
 <?php
 
-namespace Qualide\Prycing\Cron;
+namespace Prycing\Prycing\Cron;
 
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
-use Qualide\Prycing\Model\Config;
+use Prycing\Prycing\Model\Config;
 
 class FetchPrices
 {

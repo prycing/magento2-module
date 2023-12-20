@@ -4,7 +4,7 @@
         <resources>
             <resource id="Magento_Backend::admin">
                 <resource id="Magento_Backend::content">
-                    <resource id="Qualide_Prycing::settings" title="Settings" sortOrder="10">
+                    <resource id="Prycing_Prycing::settings" title="Settings" sortOrder="10">
                     </resource>
                 </resource>
             </resource>

@@ -1,6 +1,6 @@
 {
   "name": "prycing/magento2-module",
-  "version": "1.0.0",
+  "version": "v0.1.2",
   "description": "N/A",
   "type": "magento2-module",
   "require": {
@@ -14,7 +14,7 @@
       "registration.php"
     ],
     "psr-4": {
-      "Qualide\\Prycing\\": ""
+      "Prycing\\Prycing\\": ""
     }
   }
 }

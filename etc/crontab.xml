@@ -2,7 +2,7 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
     <group id="akeneo_connector">
-        <job name="qualide_prycing_sync" instance="Qualide\Prycing\Cron\FetchPrices" method="execute">
+        <job name="prycing_prycing_sync" instance="Prycing\Prycing\Cron\FetchPrices" method="execute">
             <schedule>* * * * *</schedule>
         </job>
     </group>
