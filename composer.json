@@ -7,7 +7,7 @@
     "magento/framework": "*"
   },
   "license": [
-    "Proprietary"
+    "MIT"
   ],
   "autoload": {
     "files": [
