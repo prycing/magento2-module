@@ -2,6 +2,9 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
+        <tab id="prycing" translate="label" sortOrder="2000">
+            <label>Prycing</label>
+        </tab>
         <section id="prycing_prycing"
                  translate="label"
                  type="text"
