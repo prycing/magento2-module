@@ -62,12 +62,12 @@ For support, please contact:
 
 ## Changelog
 
-### v0.1.4 (2023-10-04)
+### v0.1.4
 - Added data synchronization features from Prycing platform
 - Improved configuration options for API credentials
 - Enhanced documentation
 
-### v0.1.3 (2024-01-10)
+### v0.1.3
 - Latest release
 
 ### v0.1.2
