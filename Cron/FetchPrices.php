@@ -87,9 +87,9 @@ class FetchPrices
 
         $skus = array_column($products, 'sku');
         $productCollection = $this->productCollectionFactory->create();
-        $productCollection->addAttributeToFilter('sku', ['in' => $skus]);
+        $productCollection->addAttributeToFilter($this->config->getEanField(), ['in' => $skus]);
         foreach ($productCollection as $product) {
-            $products[$product->getSku()]['entity_id'] = $product->getId();
+            $products[$product->getData($this->config->getEanField())]['entity_id'] = $product->getId();
         }
 
         try {

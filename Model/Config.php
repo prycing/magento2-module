@@ -43,4 +43,9 @@ class Config
     {
         return (bool)$this->getValue('store_specific_pricing', 'general', $scope, $scopeId);
     }
+
+    public function getEanField(): string
+    {
+        return (string)$this->getValue('ean_field') ?: 'sku';
+    }
 }
