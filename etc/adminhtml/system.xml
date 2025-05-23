@@ -29,6 +29,12 @@
                         This is the url of the feed that will be used to get the prices.
                     </comment>
                 </field>
+                <field id="ean_field" translate="label" type="text" sortOrder="30" showInDefault="1">
+                    <label>EAN Field</label>
+                    <comment>
+                        The product attribute code that contains the EAN number (default: sku)
+                    </comment>
+                </field>
             </group>
         </section>
     </system>
