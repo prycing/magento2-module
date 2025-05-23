@@ -33,7 +33,7 @@
                     <label>Price Type</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                     <comment>
-                        Select whether the prices in the feed are including VAT (Yes) or excluding VAT (No)
+                        Select whether Magento prices include VAT (Yes) or exclude VAT (No). Prycing prices always include VAT.
                     </comment>
                 </field>
             </group>
