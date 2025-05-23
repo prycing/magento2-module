@@ -114,8 +114,8 @@ class FetchPrices
             $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
         } else {
             // If Magento prices exclude VAT, we need to deduct VAT from Prycing's base price
-            $taxRate = 1 + ($vatRate / 100); // Convert percentage to decimal and add 1
-            $priceExcludingVat = $price / $taxRate;
+            // Base price is (100 + vat_rate), so we divide by (100 + vat_rate) and multiply by 100
+            $priceExcludingVat = ($price / (100 + $vatRate)) * 100;
             $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $priceExcludingVat);
         }
     }
