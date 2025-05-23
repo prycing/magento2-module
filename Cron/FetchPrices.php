@@ -57,7 +57,8 @@ class FetchPrices
                 'price' => (float)$productData->price,
                 'special_price' => (float)$productData->special_price,
                 'special_price_from' => (string)$productData->special_price_from,
-                'special_price_to' => (string)$productData->special_price_to
+                'special_price_to' => (string)$productData->special_price_to,
+                'vat_rate' => (float)$productData->vat_rate
             ];
         }
 
@@ -75,7 +76,11 @@ class FetchPrices
                 }
 
                 // Perform mass update of prices and special prices directly in the database
-                $this->updateProductPriceBySku($product['entity_id'], $product['price']);
+                $this->updateProductPriceBySku(
+                    $product['entity_id'], 
+                    $product['price'],
+                    $product['vat_rate']
+                );
                 $this->updateSpecialPriceBySku(
                     $product['entity_id'],
                     $product['special_price'],
@@ -100,10 +105,19 @@ class FetchPrices
      *
      * @param string $entityId
      * @param float $price
+     * @param float $vatRate
      */
-    private function updateProductPriceBySku(string $entityId, float $price): void
+    private function updateProductPriceBySku(string $entityId, float $price, float $vatRate): void
     {
-        $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
+        if ($this->config->isPriceIncludingVat()) {
+            // Price already includes VAT, use it directly
+            $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
+        } else {
+            // If Magento prices exclude VAT, we need to deduct VAT from Prycing's base price
+            // Base price is (100 + vat_rate), so we divide by (100 + vat_rate) and multiply by 100
+            $priceExcludingVat = ($price / (100 + $vatRate)) * 100;
+            $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $priceExcludingVat);
+        }
     }
 
     /**

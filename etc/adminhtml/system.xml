@@ -29,6 +29,13 @@
                         This is the url of the feed that will be used to get the prices.
                     </comment>
                 </field>
+                <field id="vat_type" translate="label" type="select" sortOrder="30" showInDefault="1">
+                    <label>VAT Type</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment>
+                        Select whether Magento prices include VAT (Yes) or exclude VAT (No). Prycing prices always include VAT.
+                    </comment>
+                </field>
             </group>
             <group id="product_mapping" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0"
                    showInStore="0">
