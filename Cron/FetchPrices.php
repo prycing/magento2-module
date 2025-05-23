@@ -57,7 +57,8 @@ class FetchPrices
                 'price' => (float)$productData->price,
                 'special_price' => (float)$productData->special_price,
                 'special_price_from' => (string)$productData->special_price_from,
-                'special_price_to' => (string)$productData->special_price_to
+                'special_price_to' => (string)$productData->special_price_to,
+                'vat_rate' => (float)$productData->vat_rate
             ];
         }
 
@@ -75,7 +76,11 @@ class FetchPrices
                 }
 
                 // Perform mass update of prices and special prices directly in the database
-                $this->updateProductPriceBySku($product['entity_id'], $product['price']);
+                $this->updateProductPriceBySku(
+                    $product['entity_id'], 
+                    $product['price'],
+                    $product['vat_rate']
+                );
                 $this->updateSpecialPriceBySku(
                     $product['entity_id'],
                     $product['special_price'],
@@ -100,26 +105,15 @@ class FetchPrices
      *
      * @param string $entityId
      * @param float $price
+     * @param float $vatRate
      */
-    private function updateProductPriceBySku(string $entityId, float $price): void
+    private function updateProductPriceBySku(string $entityId, float $price, float $vatRate): void
     {
         if ($this->config->isPriceIncludingVat()) {
-            // Get the VAT rate from the product
-            $vatRate = $this->connection->fetchOne(
-                $this->connection->select()
-                    ->from($this->resourceConnection->getTableName('catalog_product_entity_decimal'), ['value'])
-                    ->where('entity_id = ?', $entityId)
-                    ->where('attribute_id = ?', $this->getAttributeId('vat_rate'))
-            );
-
-            if ($vatRate) {
-                $taxRate = 1 + ($vatRate / 100); // Convert percentage to decimal and add 1
-                $basePrice = $price / $taxRate;
-                $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $basePrice);
-            } else {
-                // If no VAT rate is set, use the price as is
-                $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
-            }
+            // Calculate base price using VAT rate from feed
+            $taxRate = 1 + ($vatRate / 100); // Convert percentage to decimal and add 1
+            $basePrice = $price / $taxRate;
+            $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $basePrice);
         } else {
             // If price excludes VAT, we can use it directly as the base price
             $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
