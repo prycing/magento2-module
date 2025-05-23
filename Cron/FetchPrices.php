@@ -103,7 +103,27 @@ class FetchPrices
      */
     private function updateProductPriceBySku(string $entityId, float $price): void
     {
-        $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
+        if ($this->config->isPriceIncludingVat()) {
+            // Get the VAT rate from the product
+            $vatRate = $this->connection->fetchOne(
+                $this->connection->select()
+                    ->from($this->resourceConnection->getTableName('catalog_product_entity_decimal'), ['value'])
+                    ->where('entity_id = ?', $entityId)
+                    ->where('attribute_id = ?', $this->getAttributeId('vat_rate'))
+            );
+
+            if ($vatRate) {
+                $taxRate = 1 + ($vatRate / 100); // Convert percentage to decimal and add 1
+                $basePrice = $price / $taxRate;
+                $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $basePrice);
+            } else {
+                // If no VAT rate is set, use the price as is
+                $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
+            }
+        } else {
+            // If price excludes VAT, we can use it directly as the base price
+            $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
+        }
     }
 
     /**

@@ -39,4 +39,9 @@ class Config
     {
         return (string)$this->getValue('ean_field') ?: 'sku';
     }
+
+    public function isPriceIncludingVat(): bool
+    {
+        return (bool)$this->getValue('price_type');
+    }
 }
