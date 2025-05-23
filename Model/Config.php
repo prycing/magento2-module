@@ -42,6 +42,6 @@ class Config
 
     public function isPriceIncludingVat(): bool
     {
-        return (bool)$this->getValue('price_type');
+        return (bool)$this->getValue('vat_type');
     }
 }
