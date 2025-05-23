@@ -30,6 +30,17 @@
                     </comment>
                 </field>
             </group>
+            <group id="product_mapping" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0"
+                   showInStore="0">
+                <label>Product Mapping</label>
+                <field id="ean_field" translate="label" type="select" sortOrder="10" showInDefault="1">
+                    <label>EAN Field</label>
+                    <source_model>Prycing\Prycing\Model\Config\Source\ProductAttributes</source_model>
+                    <comment>
+                        Select the product attribute that contains the EAN number (default: sku)
+                    </comment>
+                </field>
+            </group>
         </section>
     </system>
 </config>

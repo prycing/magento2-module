@@ -34,4 +34,9 @@ class Config
     {
         return (string)$this->getValue('feed_url');
     }
+
+    public function getEanField(): string
+    {
+        return (string)$this->getValue('ean_field') ?: 'sku';
+    }
 }
