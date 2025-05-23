@@ -110,13 +110,13 @@ class FetchPrices
     private function updateProductPriceBySku(string $entityId, float $price, float $vatRate): void
     {
         if ($this->config->isPriceIncludingVat()) {
-            // Calculate base price using VAT rate from feed
-            $taxRate = 1 + ($vatRate / 100); // Convert percentage to decimal and add 1
-            $basePrice = $price / $taxRate;
-            $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $basePrice);
-        } else {
-            // If price excludes VAT, we can use it directly as the base price
+            // Price already includes VAT, use it directly
             $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
+        } else {
+            // If price excludes VAT, we need to add VAT to match Prycing's base price
+            $taxRate = 1 + ($vatRate / 100); // Convert percentage to decimal and add 1
+            $priceWithVat = $price * $taxRate;
+            $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $priceWithVat);
         }
     }
 
