@@ -39,11 +39,6 @@ class Config
         return (string)$this->getValue('feed_url', 'general', $scope, $scopeId);
     }
 
-    public function isStoreSpecificPricingEnabled($scope = null, $scopeId = null): bool
-    {
-        return (bool)$this->getValue('store_specific_pricing', 'general', $scope, $scopeId);
-    }
-
     public function getEanField(): string
     {
         return (string)$this->getValue('ean_field') ?: 'sku';
