@@ -29,13 +29,6 @@
                         This is the URL of the feed that will be used to get the prices. You can set different URLs for different store views.
                     </comment>
                 </field>
-                <field id="store_specific_pricing" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Enable Store-Specific Pricing</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                    <comment>
-                        When enabled, the module will process store-specific pricing from the feed. The feed should include store_prices section for each product.
-                    </comment>
-                </field>
             </group>
             <group id="product_mapping" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0"
                    showInStore="0">

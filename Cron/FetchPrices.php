@@ -37,87 +37,76 @@ class FetchPrices
             return 0;
         }
 
-        // If enabled fetch the feed (xml) and parse it
-        $feedUrl = $this->config->getFeedUrl();
-
-        try {
-            // Get the feed from the URL
-            $xml = simplexml_load_file($feedUrl);
-        } catch (\Exception) {
-            // TODO: Log error
-            return 0;
-        }
-
-        $xmlProducts = $xml->product;
-
         // Start a transaction to ensure data consistency
         $this->connection = $this->resourceConnection->getConnection();
         $this->connection->beginTransaction();
 
-        $products = [];
-        foreach ($xmlProducts as $productData) {
-            $sku = (string)$productData->ean;
-            $storePrices = [];
-            
-            // Handle store-specific prices if they exist
-            if (isset($productData->store_prices)) {
-                foreach ($productData->store_prices->store as $storePrice) {
-                    $storeId = (string)$storePrice->store_id;
-                    $storePrices[$storeId] = [
-                        'price' => (float)$storePrice->price,
-                        'special_price' => (float)$storePrice->special_price,
-                        'special_price_from' => (string)$storePrice->special_price_from,
-                        'special_price_to' => (string)$storePrice->special_price_to
-                    ];
-                }
-            }
-
-            // Default prices (store_id = 0)
-            $products[$sku] = [
-                'sku' => $sku,
-                'store_prices' => $storePrices,
-                'default_price' => [
-                    'price' => (float)$productData->price,
-                    'special_price' => (float)$productData->special_price,
-                    'special_price_from' => (string)$productData->special_price_from,
-                    'special_price_to' => (string)$productData->special_price_to
-                ]
-            ];
-        }
-
-        $skus = array_column($products, 'sku');
-        $productCollection = $this->productCollectionFactory->create();
-        $productCollection->addAttributeToFilter($this->config->getEanField(), ['in' => $skus]);
-        foreach ($productCollection as $product) {
-            $products[$product->getData($this->config->getEanField())]['entity_id'] = $product->getId();
-        }
-
         try {
-            foreach ($products as $product) {
-                if (!isset($product['entity_id'])) {
+            // Process each store view
+            foreach ($this->storeManager->getStores() as $store) {
+                $storeId = (int)$store->getId();
+                
+                // Skip if module is not enabled for this store
+                if (!$this->config->isEnabled('store', $storeId)) {
                     continue;
                 }
 
-                $entityId = $product['entity_id'];
+                // Get the feed URL for this store
+                $feedUrl = $this->config->getFeedUrl('store', $storeId);
+                if (empty($feedUrl)) {
+                    continue;
+                }
 
-                // Update default prices (store_id = 0)
-                $this->updateProductPriceBySku($entityId, $product['default_price']['price'], 0);
-                $this->updateSpecialPriceBySku(
-                    $entityId,
-                    $product['default_price']['special_price'],
-                    $product['default_price']['special_price_from'],
-                    $product['default_price']['special_price_to'],
-                    0
-                );
+                try {
+                    // Get the feed from the URL
+                    $xml = simplexml_load_file($feedUrl);
+                } catch (\Exception) {
+                    // TODO: Log error for this specific store
+                    continue;
+                }
 
-                // Update store-specific prices
-                foreach ($product['store_prices'] as $storeId => $storePrice) {
-                    $this->updateProductPriceBySku($entityId, $storePrice['price'], $storeId);
+                $xmlProducts = $xml->product;
+                $products = [];
+
+                foreach ($xmlProducts as $productData) {
+                    $sku = (string)$productData->ean;
+                    $products[$sku] = [
+                        'sku' => $sku,
+                        'price' => [
+                            'price' => (float)$productData->price,
+                            'special_price' => (float)$productData->special_price,
+                            'special_price_from' => (string)$productData->special_price_from,
+                            'special_price_to' => (string)$productData->special_price_to
+                        ]
+                    ];
+                }
+
+                $skus = array_column($products, 'sku');
+                $productCollection = $this->productCollectionFactory->create();
+                $productCollection->addAttributeToFilter($this->config->getEanField(), ['in' => $skus]);
+                
+                foreach ($productCollection as $product) {
+                    $sku = $product->getData($this->config->getEanField());
+                    if (isset($products[$sku])) {
+                        $products[$sku]['entity_id'] = $product->getId();
+                    }
+                }
+
+                // Update prices for this store
+                foreach ($products as $product) {
+                    if (!isset($product['entity_id'])) {
+                        continue;
+                    }
+
+                    $entityId = $product['entity_id'];
+                    $priceData = $product['price'];
+
+                    $this->updateProductPriceBySku($entityId, $priceData['price'], $storeId);
                     $this->updateSpecialPriceBySku(
                         $entityId,
-                        $storePrice['special_price'],
-                        $storePrice['special_price_from'],
-                        $storePrice['special_price_to'],
+                        $priceData['special_price'],
+                        $priceData['special_price_from'],
+                        $priceData['special_price_to'],
                         $storeId
                     );
                 }
