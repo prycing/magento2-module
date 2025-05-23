@@ -6,6 +6,8 @@ use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductColl
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Prycing\Prycing\Model\Config;
+use Magento\Store\Model\StoreManagerInterface;
+use Magento\Store\Model\Store;
 
 class FetchPrices
 {
@@ -14,15 +16,18 @@ class FetchPrices
     private ResourceConnection $resourceConnection;
     private AdapterInterface $connection;
     private array $productAttributeCache = [];
+    private StoreManagerInterface $storeManager;
 
     public function __construct(
         Config $config,
         ProductCollectionFactory $productCollectionFactory,
-        ResourceConnection $resourceConnection
+        ResourceConnection $resourceConnection,
+        StoreManagerInterface $storeManager
     ) {
         $this->config = $config;
         $this->productCollectionFactory = $productCollectionFactory;
         $this->resourceConnection = $resourceConnection;
+        $this->storeManager = $storeManager;
     }
 
     public function execute(): int
@@ -52,12 +57,31 @@ class FetchPrices
         $products = [];
         foreach ($xmlProducts as $productData) {
             $sku = (string)$productData->ean;
+            $storePrices = [];
+            
+            // Handle store-specific prices if they exist
+            if (isset($productData->store_prices)) {
+                foreach ($productData->store_prices->store as $storePrice) {
+                    $storeId = (string)$storePrice->store_id;
+                    $storePrices[$storeId] = [
+                        'price' => (float)$storePrice->price,
+                        'special_price' => (float)$storePrice->special_price,
+                        'special_price_from' => (string)$storePrice->special_price_from,
+                        'special_price_to' => (string)$storePrice->special_price_to
+                    ];
+                }
+            }
+
+            // Default prices (store_id = 0)
             $products[$sku] = [
-                'sku' => (string)$productData->ean,
-                'price' => (float)$productData->price,
-                'special_price' => (float)$productData->special_price,
-                'special_price_from' => (string)$productData->special_price_from,
-                'special_price_to' => (string)$productData->special_price_to
+                'sku' => $sku,
+                'store_prices' => $storePrices,
+                'default_price' => [
+                    'price' => (float)$productData->price,
+                    'special_price' => (float)$productData->special_price,
+                    'special_price_from' => (string)$productData->special_price_from,
+                    'special_price_to' => (string)$productData->special_price_to
+                ]
             ];
         }
 
@@ -74,14 +98,29 @@ class FetchPrices
                     continue;
                 }
 
-                // Perform mass update of prices and special prices directly in the database
-                $this->updateProductPriceBySku($product['entity_id'], $product['price']);
+                $entityId = $product['entity_id'];
+
+                // Update default prices (store_id = 0)
+                $this->updateProductPriceBySku($entityId, $product['default_price']['price'], 0);
                 $this->updateSpecialPriceBySku(
-                    $product['entity_id'],
-                    $product['special_price'],
-                    $product['special_price_from'],
-                    $product['special_price_to']
+                    $entityId,
+                    $product['default_price']['special_price'],
+                    $product['default_price']['special_price_from'],
+                    $product['default_price']['special_price_to'],
+                    0
                 );
+
+                // Update store-specific prices
+                foreach ($product['store_prices'] as $storeId => $storePrice) {
+                    $this->updateProductPriceBySku($entityId, $storePrice['price'], $storeId);
+                    $this->updateSpecialPriceBySku(
+                        $entityId,
+                        $storePrice['special_price'],
+                        $storePrice['special_price_from'],
+                        $storePrice['special_price_to'],
+                        $storeId
+                    );
+                }
             }
 
             // Commit the transaction if everything went well
@@ -100,10 +139,11 @@ class FetchPrices
      *
      * @param string $entityId
      * @param float $price
+     * @param int $storeId
      */
-    private function updateProductPriceBySku(string $entityId, float $price): void
+    private function updateProductPriceBySku(string $entityId, float $price, int $storeId): void
     {
-        $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
+        $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price, $storeId);
     }
 
     /**
@@ -113,24 +153,27 @@ class FetchPrices
      * @param float|null $specialPrice
      * @param string|null $specialPriceFrom
      * @param string|null $specialPriceTo
+     * @param int $storeId
      */
     private function updateSpecialPriceBySku(
         string $entityId,
         ?float $specialPrice,
         ?string $specialPriceFrom,
-        ?string $specialPriceTo
+        ?string $specialPriceTo,
+        int $storeId
     ): void {
         $decimalTable = "catalog_product_entity_decimal";
         $datetimeTable = "catalog_product_entity_datetime";
+        
         if ($specialPrice) {
-            $this->updateProductAttribute($entityId, 'special_price', $decimalTable, $specialPrice);
-            $this->updateProductAttribute($entityId, 'special_from_date', $datetimeTable, $specialPriceFrom ?: null);
-            $this->updateProductAttribute($entityId, 'special_to_date', $datetimeTable, $specialPriceTo ?: null);
+            $this->updateProductAttribute($entityId, 'special_price', $decimalTable, $specialPrice, $storeId);
+            $this->updateProductAttribute($entityId, 'special_from_date', $datetimeTable, $specialPriceFrom ?: null, $storeId);
+            $this->updateProductAttribute($entityId, 'special_to_date', $datetimeTable, $specialPriceTo ?: null, $storeId);
         } else {
             // If special price is not set in XML, set it to null in the database
-            $this->updateProductAttribute($entityId, 'special_price', $decimalTable, null);
-            $this->updateProductAttribute($entityId, 'special_from_date', $datetimeTable, null);
-            $this->updateProductAttribute($entityId, 'special_to_date', $datetimeTable, null);
+            $this->updateProductAttribute($entityId, 'special_price', $decimalTable, null, $storeId);
+            $this->updateProductAttribute($entityId, 'special_from_date', $datetimeTable, null, $storeId);
+            $this->updateProductAttribute($entityId, 'special_to_date', $datetimeTable, null, $storeId);
         }
     }
 
@@ -165,21 +208,35 @@ class FetchPrices
      * @param string $attribute
      * @param string $table
      * @param mixed $value
+     * @param int $storeId
      * @return void
      */
-    public function updateProductAttribute(string $entityId, string $attribute, string $table, mixed $value): void
+    public function updateProductAttribute(string $entityId, string $attribute, string $table, mixed $value, int $storeId): void
     {
         $tableName = $this->resourceConnection->getTableName($table);
         $attributeId = $this->getAttributeId($attribute);
 
-        if ($value == null) {
-            $this->connection->delete($tableName, ['attribute_id = ?' => $attributeId, 'entity_id = ?' => $entityId]);
+        if ($value === null) {
+            $this->connection->delete(
+                $tableName,
+                [
+                    'attribute_id = ?' => $attributeId,
+                    'entity_id = ?' => $entityId,
+                    'store_id = ?' => $storeId
+                ]
+            );
             return;
         }
 
         $this->connection->insertOnDuplicate(
             $tableName,
-            ['value' => $value, 'attribute_id' => $attributeId, 'store_id' => 0, 'entity_id' => $entityId], ['value']
+            [
+                'value' => $value,
+                'attribute_id' => $attributeId,
+                'store_id' => $storeId,
+                'entity_id' => $entityId
+            ],
+            ['value']
         );
     }
 }
