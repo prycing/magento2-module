@@ -66,7 +66,7 @@ class FetchPrices
         $productCollection = $this->productCollectionFactory->create();
         $productCollection->addAttributeToFilter($this->config->getEanField(), ['in' => $skus]);
         foreach ($productCollection as $product) {
-            $products[$product->getData($this->config->getEanField())]['entity_id'] = $product->getId();
+            $products[$product->getData($this->config->getEanField())]['entity_id'] = (int) $product->getId();
         }
 
         try {
@@ -77,7 +77,7 @@ class FetchPrices
 
                 // Perform mass update of prices and special prices directly in the database
                 $this->updateProductPriceBySku(
-                    $product['entity_id'], 
+                    $product['entity_id'],
                     $product['price'],
                     $product['vat_rate']
                 );
@@ -107,7 +107,7 @@ class FetchPrices
      * @param float $price
      * @param float $vatRate
      */
-    private function updateProductPriceBySku(string $entityId, float $price, float $vatRate): void
+    private function updateProductPriceBySku(int $entityId, float $price, float $vatRate): void
     {
         if ($this->config->isPriceIncludingVat()) {
             // Price already includes VAT, use it directly
@@ -193,7 +193,8 @@ class FetchPrices
 
         $this->connection->insertOnDuplicate(
             $tableName,
-            ['value' => $value, 'attribute_id' => $attributeId, 'store_id' => 0, 'entity_id' => $entityId], ['value']
+            ['value' => $value, 'attribute_id' => $attributeId, 'store_id' => 0, 'entity_id' => $entityId],
+            ['value']
         );
     }
 }
