@@ -85,7 +85,8 @@ class FetchPrices
                     $product['entity_id'],
                     $product['special_price'],
                     $product['special_price_from'],
-                    $product['special_price_to']
+                    $product['special_price_to'],
+                    $product['vat_rate']
                 );
             }
 
@@ -101,6 +102,23 @@ class FetchPrices
     }
 
     /**
+     * Calculate price with VAT handling
+     *
+     * @param float $price
+     * @param float $vatRate
+     * @return float
+     */
+    private function calculatePriceWithVat(float $price, float $vatRate): float
+    {
+        if ($this->config->isPriceIncludingVat()) {
+            return $price;
+        }
+        // If Magento prices exclude VAT, we need to deduct VAT from Prycing's base price
+        // Base price is (100 + vat_rate), so we divide by (100 + vat_rate) and multiply by 100
+        return ($price / (100 + $vatRate)) * 100;
+    }
+
+    /**
      * Update product price by SKU
      *
      * @param string $entityId
@@ -109,15 +127,8 @@ class FetchPrices
      */
     private function updateProductPriceBySku(int $entityId, float $price, float $vatRate): void
     {
-        if ($this->config->isPriceIncludingVat()) {
-            // Price already includes VAT, use it directly
-            $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $price);
-        } else {
-            // If Magento prices exclude VAT, we need to deduct VAT from Prycing's base price
-            // Base price is (100 + vat_rate), so we divide by (100 + vat_rate) and multiply by 100
-            $priceExcludingVat = ($price / (100 + $vatRate)) * 100;
-            $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $priceExcludingVat);
-        }
+        $priceWithVat = $this->calculatePriceWithVat($price, $vatRate);
+        $this->updateProductAttribute($entityId, 'price', 'catalog_product_entity_decimal', $priceWithVat);
     }
 
     /**
@@ -127,17 +138,20 @@ class FetchPrices
      * @param float|null $specialPrice
      * @param string|null $specialPriceFrom
      * @param string|null $specialPriceTo
+     * @param float $vatRate
      */
     private function updateSpecialPriceBySku(
         string $entityId,
         ?float $specialPrice,
         ?string $specialPriceFrom,
-        ?string $specialPriceTo
+        ?string $specialPriceTo,
+        float $vatRate
     ): void {
         $decimalTable = "catalog_product_entity_decimal";
         $datetimeTable = "catalog_product_entity_datetime";
         if ($specialPrice) {
-            $this->updateProductAttribute($entityId, 'special_price', $decimalTable, $specialPrice);
+            $specialPriceWithVat = $this->calculatePriceWithVat($specialPrice, $vatRate);
+            $this->updateProductAttribute($entityId, 'special_price', $decimalTable, $specialPriceWithVat);
             $this->updateProductAttribute($entityId, 'special_from_date', $datetimeTable, $specialPriceFrom ?: null);
             $this->updateProductAttribute($entityId, 'special_to_date', $datetimeTable, $specialPriceTo ?: null);
         } else {
