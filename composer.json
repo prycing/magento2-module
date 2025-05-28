@@ -1,6 +1,6 @@
 {
   "name": "prycing/magento2-module",
-  "version": "v0.1.5",
+  "version": "v0.1.6",
   "description": "N/A",
   "type": "magento2-module",
   "require": {
