@@ -62,7 +62,7 @@ For support, please contact:
 
 ## Changelog
 
-### v0.2.0
+### v0.1.6
 - Fixed tax calculation to properly round prices to 2 decimal places
 - Improved price precision for both regular and special prices with VAT calculations
 
