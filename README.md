@@ -62,6 +62,13 @@ For support, please contact:
 
 ## Changelog
 
+### v0.2.0
+- Fixed tax calculation to properly round prices to 2 decimal places
+- Improved price precision for both regular and special prices with VAT calculations
+
+### v0.1.5
+- Latest stable release
+
 ### v0.1.4
 - Added data synchronization features from Prycing platform
 - Improved configuration options for API credentials

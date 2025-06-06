@@ -111,11 +111,11 @@ class FetchPrices
     private function calculatePriceWithVat(float $price, float $vatRate): float
     {
         if ($this->config->isPriceIncludingVat()) {
-            return $price;
+            return round($price, 2);
         }
         // If Magento prices exclude VAT, we need to deduct VAT from Prycing's base price
         // Base price is (100 + vat_rate), so we divide by (100 + vat_rate) and multiply by 100
-        return ($price / (100 + $vatRate)) * 100;
+        return round(($price / (100 + $vatRate)) * 100, 2);
     }
 
     /**
